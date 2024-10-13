@@ -1,4 +1,5 @@
-﻿@page "/"
+﻿@using Logic;
+@page "/"
 
 <PageTitle>Home</PageTitle>
 
@@ -8,3 +9,125 @@
 <br>
 <br>
 <br>
+
+<div style="display: flex; width: 100vw; height: 100vh; justify-content: center; align-items: center;">
+    @if (newRoad == null)
+    {
+        <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem;">
+            <h2 style="grid-column: span 2; justify-self: center;">Create New Road</h2>
+            @if (ErrorMessage != null)
+            {
+                <div style="grid-column: span 2; justify-self: center; color: red;">@ErrorMessage</div>
+            }
+            <label style="justify-self: flex-end;">
+                Rows:
+            </label>
+            <input type="number" @bind=RequestedRows>
+            <label style="justify-self: flex-end;">
+                Columns:
+            </label>
+            <input type="number" @bind=RequestedColumns>
+            <button style="grid-column: span 2;" @onclick="CreateRoad">Create</button>
+        </div>
+    }
+    else
+    {
+        <div style="display: grid; grid-template-columns: 1fr 1fr;">
+            <table>
+                @for (int row = 0; row < newRoad.RowCount; row++)
+                {
+                    <tr>
+                        @for (int col = 0; col < newRoad.ColCount; col++)
+                        {
+
+                            <td>
+                                @if (newRoad.GetVehicle(row, col) != null)
+                                {
+                                    <img src="@newRoad.GetVehicle(row, col)?.GetImagePath()" height="100" />
+                                }
+                                else
+                                {
+                                    <div></div>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </table>
+            <div style="display: flex; flex-direction: column; gap: 1rem; justify-content: flex-end;  padding: 1rem;">
+                <h2 style="align-self: center;">
+                    Set a Car
+                </h2>
+                @if (ErrorMessage != null)
+                {
+                    <div style="align-self: center; color: red;">@ErrorMessage</div>
+                }
+                <div style="display: grid; grid-template-columns: 1fr 4fr; gap: 1rem;">
+
+                    <label style="justify-self: flex-end;">row:</label>
+                    <div>
+                        <input style="width: 100%;" @bind=vehicleRowInput />
+                    </div>
+                    <label style="justify-self: flex-end;">column:</label>
+                    <div>
+                        <input style="width: 100%;" @bind=vehicleColumnInput />
+                    </div>
+                    <div style="display:flex; flex-direction: column; grid-column: span 2; gap: 1rem;">
+                        <button @onclick=@(() => SetVehicle(Vehicles.Car))>Set Car</button>
+                        <button @onclick=@(() => SetVehicle(Vehicles.Bus))>Set Bus</button>
+                        <button @onclick=@(() => SetVehicle(Vehicles.Firetruck))>Set FireTruck</button>
+                        <button @onclick=@(() => SetVehicle(Vehicles.Taxi))>Set Taxi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+@code {
+    string RequestedRows;
+    string RequestedColumns;
+    string ErrorMessage;
+    Road newRoad;
+    string vehicleRowInput;
+    string vehicleColumnInput;
+    void CreateRoad()
+    {
+        Console.WriteLine("Creating new road");
+        try
+        {
+            int rows = Convert.ToInt32(RequestedRows);
+            if (rows < 1) throw new Exception("Row value must be positive");
+            int columns = Convert.ToInt32(RequestedColumns);
+            if (columns < 1) throw new Exception("Column value must be positive");
+            newRoad = new Logic.Road(rows, columns);
+
+        }
+        catch (Exception error)
+        {
+            ErrorMessage = error.Message ?? "Done did messed up!";
+        }
+    }
+    void SetVehicle(Vehicles setVehicle)
+    {
+        try
+        {
+            int row = Convert.ToInt32(vehicleRowInput);
+            int col = Convert.ToInt32(vehicleColumnInput);
+
+            if (row > Convert.ToInt32(RequestedRows)) throw new Exception("Row input exceeds road boundary");
+            if (col > Convert.ToInt32(RequestedColumns)) throw new Exception("Column input exceeds road boundary");
+            IVehicle vehicle = setVehicle switch
+            {
+                Vehicles.Bus => new Bus(),
+                Vehicles.Car => new Car(),
+                Vehicles.Firetruck => new Firetruck(),
+                Vehicles.Taxi => new Taxi()
+            };
+            newRoad.SetVehicle(row - 1, col - 1, vehicle);
+        }
+        catch (Exception error)
+        {
+            ErrorMessage = error.Message ?? "Done did messed up!";
+        }
+    }
+}
